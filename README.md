@@ -33,16 +33,22 @@ The server requires the following environment variables to be set:
 
 The server exposes the following tools to the LLM:
 
+### Sandbox Management
 - **`list_sandboxes()`**: Lists all active Daytona sandboxes.
 - **`create_sandbox(repository_url: str)`**: Creates a new sandbox from a Git repository URL.
 - **`get_sandbox_info(sandbox_id: str)`**: Retrieves detailed info about a sandbox.
 - **`remove_sandbox(sandbox_id: str)`**: Deletes a sandbox.
 
+### Toolbox (Execution & Files)
+- **`execute_command(sandbox_id: str, command: str)`**: Executes a shell command in the sandbox.
+- **`read_file(sandbox_id: str, path: str)`**: Reads the content of a file.
+- **`write_file(sandbox_id: str, path: str, content: str)`**: Writes content to a file.
+
 ## LLM Verification Prompt
 
 To verify the server is working with an LLM, you can use the following prompt:
 
-> "Please list my active Daytona sandboxes. If I don't have any, create one from https://github.com/daytonaio/sample-repo.git"
+> "Create a Daytona sandbox for https://github.com/daytonaio/sample-repo.git. Then, inside that sandbox, list the files in the current directory, read the README.md if it exists, and create a new file named 'hello_mcp.txt' with the content 'Hello from FastMCP!'."
 
 ## Deployment on FastMCP Cloud
 
