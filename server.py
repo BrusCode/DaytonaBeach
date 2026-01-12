@@ -192,5 +192,103 @@ async def write_file(sandbox_id: str, path: str, content: str) -> str:
     except Exception as e:
         return f"Error writing file: {str(e)}"
 
+@mcp.tool()
+async def list_files(sandbox_id: str, path: str = ".") -> str:
+    """
+    List files and directories in a Daytona sandbox.
+    Args:
+        sandbox_id: The ID of the sandbox.
+        path: The directory path to list (default is current directory ".").
+    """
+    try:
+        # Initial approach: Execute 'ls -R' (recursive) or just 'ls -la' to give agent visibility
+        # Native API for listing files: fs modules usually exist but simple ls via execute_command is robust for agents
+        # Let's try to map it to a structured output if possible, or just raw text from ls
+        cmd = f"ls -la {path}"
+        return await execute_command(sandbox_id, cmd)
+    except Exception as e:
+        return f"Error listing files: {str(e)}"
+
+# --- Prompts ---
+
+@mcp.prompt()
+def python_agent() -> str:
+    """
+    Returns a system prompt for an agent specialized in Python development within Daytona.
+    """
+    return """You are an expert Python developer working inside a Daytona Sandbox.
+Your goal is to satisfy the user's coding requests efficiently.
+
+Capabilities:
+- You can list files to explore the codebase.
+- You can read and write files directly.
+- You can execute shell commands to run tests, linters, or scripts.
+
+Guidelines:
+1. Always explore the file structure first to understand the context.
+2. When creating new files, ensure standard project structure (setup.py, requirements.txt).
+3. Verify your code by running it or creating simple tests.
+"""
+
+@mcp.prompt()
+def code_review() -> str:
+    """
+    Returns a prompt for performing a code review on the repository in the sandbox.
+    """
+    return """You are a senior software engineer tasked with reviewing the code in this Daytona Sandbox.
+    
+Please:
+1. List the files to understand the project structure.
+2. Read key files (README, main logic, tests).
+3. specific suggestions for improvements regarding:
+    - Code quality and PEP 8 compliance.
+    - Potential bugs or security issues.
+    - Performance optimizations.
+    - Test coverage.
+"""
+
+# --- Resources ---
+
+@mcp.resource("daytona://sandboxes")
+async def list_sandboxes_resource() -> str:
+    """
+    A dynamic resource that lists all active sandboxes in JSON format.
+    """
+    try:
+        url = f"{get_base_url()}/api/sandbox"
+        headers = get_headers()
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            return json.dumps(response.json(), indent=2)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+@mcp.resource("daytona://{sandbox_id}/files/{path}")
+async def read_file_resource(sandbox_id: str, path: str) -> str:
+    """
+    Directly access a file's content via a URI.
+    Example: daytona://my-sandbox/files/README.md
+    """
+    try:
+        # Reuse read_file logic or call endpoint
+        # Note: path in URI might need decoding if it contains slashes that conflict with pattern
+        # Ideally, use execute_tool, but direct impl is cleaner for resource
+        
+        # Path adjustment: generic handlers might pass path with slashes
+        decoded_path = path # fastmcp handles basic matching, but deep paths might catch partial
+        # Simple fix: assume path is relative to repo root
+        
+        url = f"{get_base_url()}/api/toolbox/{sandbox_id}/files/download"
+        headers = get_headers()
+        params = {"path": decoded_path}
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            return response.text
+    except Exception as e:
+        return f"Error reading resource {sandbox_id}/{path}: {str(e)}"
+
 if __name__ == "__main__":
     mcp.run()
