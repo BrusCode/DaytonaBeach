@@ -1,6 +1,6 @@
 # Daytona MCP Server
 
-This is a Model Context Protocol (MCP) server for [Daytona](https://daytona.io/), allowing LLMs to interact with Daytona workspaces.
+This is a Model Context Protocol (MCP) server for [Daytona](https://daytona.io/), allowing LLMs to interact with Daytona sandboxes.
 It is built using `fastmcp` and designed for deployment on [fastmcp.cloud](https://fastmcp.cloud).
 
 ## Prerequisites
@@ -32,16 +32,16 @@ The server requires the following environment variables to be set:
 
 The server exposes the following tools to the LLM:
 
-- **`list_workspaces()`**: Lists all active Daytona workspaces.
-- **`create_workspace(repository_url: str)`**: Creates a new workspace from a Git repository URL.
-- **`get_workspace_info(workspace_id: str)`**: Retrieves detailed info about a workspace.
-- **`remove_workspace(workspace_id: str)`**: Deletes a workspace.
+- **`list_sandboxes()`**: Lists all active Daytona sandboxes.
+- **`create_sandbox(repository_url: str)`**: Creates a new sandbox from a Git repository URL.
+- **`get_sandbox_info(sandbox_id: str)`**: Retrieves detailed info about a sandbox.
+- **`remove_sandbox(sandbox_id: str)`**: Deletes a sandbox.
 
 ## LLM Verification Prompt
 
 To verify the server is working with an LLM, you can use the following prompt:
 
-> "Please list my active Daytona workspaces. If I don't have any, create one from https://github.com/daytonaio/sample-repo.git"
+> "Please list my active Daytona sandboxes. If I don't have any, create one from https://github.com/daytonaio/sample-repo.git"
 
 ## Deployment on FastMCP Cloud
 
