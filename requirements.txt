@@ -1,0 +1,2 @@
+fastmcp
+daytona-sdk
