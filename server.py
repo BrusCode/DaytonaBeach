@@ -1,83 +1,112 @@
 from fastmcp import FastMCP
-from daytona import Daytona, DaytonaConfig, CreateSandboxParams
+import httpx
 import os
+import json
 
 # Initialize FastMCP
 mcp = FastMCP("daytona")
 
-def get_daytona_client() -> Daytona:
+def get_headers() -> dict:
     api_key = os.getenv("DAYTONA_API_KEY")
-    server_url = os.getenv("DAYTONA_SERVER_URL")
-    
     if not api_key:
         raise ValueError("DAYTONA_API_KEY environment variable is not set")
-    if not server_url:
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+def get_base_url() -> str:
+    url = os.getenv("DAYTONA_SERVER_URL")
+    if not url:
         raise ValueError("DAYTONA_SERVER_URL environment variable is not set")
-        
-    config = DaytonaConfig(api_key=api_key, server_url=server_url)
-    return Daytona(config=config)
+    return url.rstrip('/')
 
 @mcp.tool()
-def list_sandboxes() -> str:
+async def list_sandboxes() -> str:
     """
     List all active Daytona sandboxes.
     """
     try:
-        client = get_daytona_client()
-        sandboxes = client.list_sandboxes()
-        return str(sandboxes)
+        url = f"{get_base_url()}/api/sandbox"
+        headers = get_headers()
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            return json.dumps(response.json(), indent=2)
+    except httpx.HTTPStatusError as e:
+        return f"HTTP Error listing sandboxes: {e.response.status_code} - {e.response.text}"
     except Exception as e:
         return f"Error listing sandboxes: {str(e)}"
 
 @mcp.tool()
-def create_sandbox(repository_url: str) -> str:
+async def create_sandbox(repository_url: str) -> str:
     """
     Create a new Daytona sandbox from a Git repository URL.
     Args:
         repository_url: The URL of the Git repository to create the sandbox from.
     """
     try:
-        client = get_daytona_client()
-        # Assuming one of these patterns works based on common SDK usage. 
-        # If parameters differ, this might need further adjustment.
-        # We try to pass repository_url as a parameter if CreateSandboxParams accepts it.
-        # Otherwise, we might need a specific param class but CreateSandboxParams is the standard entry.
-        try:
-             params = CreateSandboxParams(repositories=[repository_url])
-        except TypeError:
-             # Fallback if repositories arg is not list or named differently
-             params = CreateSandboxParams(image=repository_url) # Some SDKs treat image as source
-             
-        sandbox = client.create_sandbox(params)
-        return f"Sandbox created successfully: {sandbox.id}"
+        url = f"{get_base_url()}/api/sandbox"
+        headers = get_headers()
+        
+        # Constructing the payload based on common Daytona API patterns
+        # Adjust command/image/user if necessary based on specific API version docs
+        payload = {
+            "source": {
+                "repository": {
+                    "url": repository_url
+                }
+            },
+            "name": repository_url.split("/")[-1].replace(".git", "") 
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            return f"Sandbox created successfully. Details: {json.dumps(response.json(), indent=2)}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP Error creating sandbox: {e.response.status_code} - {e.response.text}"
     except Exception as e:
         return f"Error creating sandbox: {str(e)}"
 
 @mcp.tool()
-def get_sandbox_info(sandbox_id: str) -> str:
+async def get_sandbox_info(sandbox_id: str) -> str:
     """
     Get detailed information about a specific sandbox.
     Args:
         sandbox_id: The ID of the sandbox to retrieve info for.
     """
     try:
-        client = get_daytona_client()
-        sandbox = client.get_sandbox(sandbox_id)
-        return str(sandbox)
+        url = f"{get_base_url()}/api/sandbox/{sandbox_id}"
+        headers = get_headers()
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            return json.dumps(response.json(), indent=2)
+    except httpx.HTTPStatusError as e:
+        return f"HTTP Error getting sandbox info: {e.response.status_code} - {e.response.text}"
     except Exception as e:
         return f"Error getting sandbox info: {str(e)}"
 
 @mcp.tool()
-def remove_sandbox(sandbox_id: str) -> str:
+async def remove_sandbox(sandbox_id: str) -> str:
     """
     Remove (delete) a Daytona sandbox.
     Args:
         sandbox_id: The ID of the sandbox to remove.
     """
     try:
-        client = get_daytona_client()
-        client.remove_sandbox(sandbox_id)
-        return f"Sandbox {sandbox_id} removed successfully"
+        url = f"{get_base_url()}/api/sandbox/{sandbox_id}"
+        headers = get_headers()
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(url, headers=headers)
+            response.raise_for_status()
+            return f"Sandbox {sandbox_id} removed successfully"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP Error removing sandbox: {e.response.status_code} - {e.response.text}"
     except Exception as e:
         return f"Error removing sandbox: {str(e)}"
 

@@ -1,7 +1,8 @@
 # Daytona MCP Server
 
 This is a Model Context Protocol (MCP) server for [Daytona](https://daytona.io/), allowing LLMs to interact with Daytona sandboxes.
-It is built using `fastmcp` and designed for deployment on [fastmcp.cloud](https://fastmcp.cloud).
+It is built using `fastmcp` and `httpx` to interact directly with the Daytona REST API.
+This server is designed for deployment on [fastmcp.cloud](https://fastmcp.cloud).
 
 ## Prerequisites
 
@@ -14,7 +15,7 @@ It is built using `fastmcp` and designed for deployment on [fastmcp.cloud](https
 The server requires the following environment variables to be set:
 
 - `DAYTONA_API_KEY`: Your Daytona API Key.
-- `DAYTONA_SERVER_URL`: The URL of your Daytona server.
+- `DAYTONA_SERVER_URL`: The URL of your Daytona server (e.g. `https://daytona.app.daytona.io`).
 
 ## Installation & Local Usage
 
